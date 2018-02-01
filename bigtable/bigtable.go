@@ -617,9 +617,14 @@ func (t *Table) ApplyBulk(ctx context.Context, rowKeys []string, muts []*Mutatio
 		}
 		entries = t.getApplyBulkRetries(entries)
 		if len(entries) > 0 && len(idempotentRetryCodes) > 0 {
+			var errStr string
+			for _, entry := range entries {
+				errStr += fmt.Sprintf("\nerror: %s", entry.Err.Error())
+			}
+
 			// We have at least one mutation that needs to be retried.
 			// Return an arbitrary error that is retryable according to callOptions.
-			return grpc.Errorf(idempotentRetryCodes[0], "Synthetic error: partial failure of ApplyBulk")
+			return grpc.Errorf(idempotentRetryCodes[0], "Synthetic error: partial failure of ApplyBulk: %s", errStr)
 		}
 		return nil
 	}, retryOptions...)
